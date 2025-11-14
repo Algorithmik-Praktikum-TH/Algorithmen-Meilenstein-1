@@ -31,8 +31,11 @@ class MaxHeap:
         if auction_id in self.auction_map:
             raise ValueError("Auktion existiert bereits")
 
-        # TODO:
-        raise NotImplementedError
+        # TODO:*
+        self.heap.append((bid_count, auction_id))
+        index = len(self.heap) - 1
+        self.auction_map[auction_id] = (bid_count, index)
+        self._heapify_up(index)
 
     def update_bidders(self, auction_id, new_bid_count):
         """ Aktualisiert die Anzahl der Bieter für eine Auktion.
@@ -45,8 +48,15 @@ class MaxHeap:
         if auction_id not in self.auction_map:
             raise ValueError("Auktion existiert nicht")
 
-        # TODO:
-        raise NotImplementedError
+        # TODO:*
+        old_bid_count, index = self.auction_map[auction_id]
+        self.heap[index] = (new_bid_count, auction_id)
+        self.auction_map[auction_id] = (new_bid_count, index)
+        # Entscheide, ob up oder down heapify gebraucht wird
+        if new_bid_count > old_bid_count:
+            self._heapify_up(index)
+        else:
+            self._heapify_down(index)
 
     def remove(self, auction_id):
         """ Entfernt die Auktion aus dem Max-Heap.
@@ -59,7 +69,15 @@ class MaxHeap:
             raise ValueError("Auktion existiert nicht")
 
         # TODO:
-        raise NotImplementedError
+        _, index = self.auction_map.pop(auction_id)
+        last = self.heap.pop()
+        if index < len(self.heap):  # Wenn nicht das letzte Element entfernt wurde
+            self.heap[index] = last
+            bid_count, aid = last
+            self.auction_map[aid] = (bid_count, index)
+            # Heap-Eigenschaft wiederherstellen
+            self._heapify_up(index)
+            self._heapify_down(index)
 
     # *** PUBLIC GET methods ***
 
@@ -97,8 +115,13 @@ class MaxHeap:
             i: Index der ersten Auktion im Max-Heap.
             j: Index der zweiten Auktion im Max-Heap.
         """
-        # TODO:
-        raise NotImplementedError
+        # TODO:*
+        self.heap[i], self.heap[j] = self.heap[j], self.heap[i]
+        # Nach dem Swap: Map Einträge anpassen!
+        bid_count_i, auction_id_i = self.heap[i]
+        bid_count_j, auction_id_j = self.heap[j]
+        self.auction_map[auction_id_i] = (bid_count_i, i)
+        self.auction_map[auction_id_j] = (bid_count_j, j)
 
     def _heapify_up(self, index):
         """ Führt das Heapify-Up-Verfahren durch, um die Heap-Eigenschaft nach oben hin wiederherzustellen.
@@ -107,7 +130,13 @@ class MaxHeap:
             index: Der Index des Elements, das nach oben "heapified" werden soll.
         """
         # TODO:
-        raise NotImplementedError
+        while index > 0:
+            parent = (index - 1) // 2
+            if self.heap[index][0] > self.heap[parent][0]:
+                self._swap(index, parent)
+                index = parent
+            else:
+                break
 
     def _heapify_down(self, index):
         """ Führt das Heapify-Down-Verfahren durch, um die Heap-Eigenschaft nach unten hin wiederherzustellen.
@@ -115,6 +144,20 @@ class MaxHeap:
         Args:
             index: Der Index des Elements, das nach unten "heapified" werden soll.
         """
-        # TODO:
-        raise NotImplementedError
+        # TODO:*
+        size = len(self.heap)
+        while True:
+            largest = index
+            left = 2 * index + 1
+            right = 2 * index + 2
+
+            if left < size and self.heap[left][0] > self.heap[largest][0]:
+                largest = left
+            if right < size and self.heap[right][0] > self.heap[largest][0]:
+                largest = right
+
+            if largest == index:
+                break
+            self._swap(index, largest)
+            index = largest
 
