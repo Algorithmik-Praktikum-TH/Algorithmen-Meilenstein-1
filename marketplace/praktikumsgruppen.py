@@ -50,6 +50,8 @@ class Praktikumsgruppen(dict):
         Initializes a new Praktikumsgruppen object.
         """
         super().__init__()
+        self._group_map = {}  # user_id -> groupnumber*
+        self._groups = {}     # groupnumber -> set(user_id)*
 
     # *** PUBLIC methods ***
 
@@ -79,8 +81,15 @@ class Praktikumsgruppen(dict):
             user_ids (list): A list of user IDs.
             groupnumbers (list): A list of group numbers corresponding to the user IDs.
         """
-        # TODO: implement in Praktikum 1
-        pass
+        # TODO: implement in Praktikum 1*
+        self._group_map = {}
+        self._groups = {}
+        for uid, gnr in zip(user_ids, groupnumbers):
+            self._group_map[uid] = gnr
+            if gnr not in self._groups:
+                self._groups[gnr] = set()
+            self._groups[gnr].add(uid)
+        
 
     # *** PUBLIC GET methods ***
 
@@ -94,8 +103,12 @@ class Praktikumsgruppen(dict):
         Returns:
             list: A list of user IDs in the same group.
         """
-        # TODO: implement in Praktikum 1
-        pass
+        # TODO: implement in Praktikum 1*
+        gnr = self._group_map.get(user_id)
+        if gnr is None:
+            return []
+        return list(self._groups[gnr])
+        
 
     # *** PUBLIC STATIC methods ***
 
