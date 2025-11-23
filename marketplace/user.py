@@ -19,7 +19,7 @@ import marketplace.praktikumsgruppen
 
 class User(marketplace.praktikumsgruppen.SetNode):
     """
-    """Repräsentiert einen Nutzer.
+    Repräsentiert einen Nutzer.
 
     Attribute:
         _id (str): Nutzer-ID
@@ -37,7 +37,7 @@ class User(marketplace.praktikumsgruppen.SetNode):
     def __init__(self, user_id: str, password: str, name_family: str, name_first: str, gps_coord, address):
         """
 
-        :param user_id: GM‑ID des Studierenden / Nutzerkennung
+        :param user_id: GM-ID des Studierenden / Nutzerkennung
         :param password: Passwort (Standardmäßig "abcde")
         :param name_family: Familienname
         :param name_first: Vorname
