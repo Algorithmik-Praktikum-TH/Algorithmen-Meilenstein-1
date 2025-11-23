@@ -15,8 +15,7 @@ class MaxHeap:
         self.heap = []
         self.auction_map = {}
 
-        # TODO: wenn Sie die anderen Methoden implementiert haben, können Sie diese Zeile auskommentieren
-        raise NotImplementedError
+        # auction_map: key = auction_id, value = (bid_count, heap_index)
 
     # *** PUBLIC methods ***
 

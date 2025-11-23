@@ -12,19 +12,17 @@ from datetime import datetime, timedelta
 
 class Auction:
     """
-    Class representing an auction
+    Repräsentiert eine Auktion.
 
-    Attributes:
-        _id (str): id of auction
-        _item (marketplace.item.Item): the item that is sold in this auction
-        _seller_id (str): id of seller
-        _purchaser_id (str): id of purchaser of the item, None in the beginning and after the auction expired it is a
-        user id
-        _auction_ends ():
-        _recommended2users (set): set of user id's that this auction is recommended to
-        _users_bidding (heap): min heap of users bidding in this auction. user with the highest bid is at the root of
-        the heap (sorted by negative amount that was bid)
-        _bids_ordered (stack): same as _users_bidding but sorted chronologically
+    Attribute:
+        _id (str): Auktions-ID
+        _item (marketplace.item.Item): Artikel, der in dieser Auktion verkauft wird
+        _seller_id (str): Verkäufer-ID
+        _purchaser_id (str): Käufer-ID (None zu Beginn; nach Auktionsende ggf. eine ID)
+        _auction_ends (datetime): Zeitpunkt, wann die Auktion endet
+        _recommended2users (set): Menge von Nutzer‑IDs, denen diese Auktion empfohlen wird
+        _users_bidding (heap): Min-Heap der Gebote; das höchste Gebot liegt an der Wurzel (negativer Betrag)
+        _bids_ordered (stack): Gebote in chronologischer Reihenfolge (Stack)
     """
 
     # *** CONSTRUCTORS ***
@@ -45,16 +43,14 @@ class Auction:
         # Uhrzeit inklusive datum, wann Auktion ausläuft.
         self._auction_ends = datetime.now() + timedelta(seconds=random.randint(45, 1200))
 
-        # Menge von Nutzern, der diese Auktion empfohlen wird
-        # auctions recommended to user because its friends are also interested, or because user has already bought or is
-        # currently bidding on similar products
+        # Menge von Nutzern, denen diese Auktion empfohlen wird.
+        # Empfohlen wird z.B., weil Freunde Interesse zeigen oder der Nutzer ähnliche Artikel gekauft/geboten hat.
         self._recommended2users = set()
 
-        # use a heap to add a new customer with its bid (heapg implements a min heap)
+        # Verwende einen Heap, um neue Gebote effizient zu verwalten (min-Heap).
         self._users_bidding = []
 
-        # bids of all users on this auction in the order in which they were done. the last bid
-        # is on top of the stack
+        # Gebote aller Nutzer in der Reihenfolge, in der sie abgegeben wurden; das letzte Gebot liegt oben auf dem Stack.
         self._bids_ordered = marketplace.stack.Stack()
 
     # *** PUBLIC SET methods ***
@@ -76,13 +72,15 @@ class Auction:
 
     # *** PUBLIC methods ***
 
-    def bid(self, user: marketplace.user.User, bid_amount):
+    def bid(self, user: marketplace.user.User, bid_amount, users_map=None):
         """
         Lets the given user bid on this auction with the amount bid_amount.
 
-        :param user: user that wants to bid on this auction
-        :param bid_amount: amount in € that user wants to bid
-        :return: True, if bid was placed successfully, else False
+        :param user: Nutzer, der bieten möchte
+        :param bid_amount: Gebotsbetrag in €
+        :param users_map: Optionales Mapping aller Nutzer (Benutzer-ID -> User-Objekt). Wird benötigt,
+                  um bei Bedarf das Porto anhand der GPS-Koordinaten zu berechnen.
+        :return: True, falls das Gebot erfolgreich platziert wurde, sonst False
         """
         if bid_amount > user.balance():         # has user enough money?
             return False
@@ -92,7 +90,7 @@ class Auction:
 
         user_id = user.id()
 
-        portofee = self.calculate_portofee()
+        portofee = self.calculate_portofee(buyer=user, users_map=users_map)
 
         # check whether user already bid before. If yes then check if new bid is higher than previous one.
         # if higher, then decrease balance only by the difference between both bids
@@ -130,36 +128,69 @@ class Auction:
         else:
             return False
         
-    def calculate_portofee(self):
+    def calculate_portofee(self, buyer=None, users_map=None):
         """
         Berechnet Porto für die Lieferung der Bestellung. Porto ist abhängig von Distanz zwischen Käufer
         und Verkäufer
         :return: Porto in Euro
         """
-        # TODO (optionale Aufgabe in Praktikum 3): porto (fee) berechnen
-        
-        return 0.0
+        # Wenn `buyer` und `users_map` übergeben werden, berechne das Porto anhand
+        # der Distanz zwischen Käufer und Verkäufer (Haversine-Formel). Diese
+        # Implementierung dient als praktikable Näherung (Teilprojekt 3).
+        # Fallback: Pauschalbetrag für einfache Übungszwecke.
+        if buyer is not None and users_map is not None and self._seller_id in users_map:
+            try:
+                seller = users_map[self._seller_id]
+                # both buyer and seller have gps_coords() -> (lat, lon)
+                b_coords = buyer.gps_coords()
+                s_coords = seller.gps_coords()
+
+                if b_coords is None or s_coords is None:
+                    return 0.0
+
+                # Haversine formula to compute distance in kilometers
+                from math import radians, sin, cos, sqrt, atan2
+
+                lat1, lon1 = b_coords
+                lat2, lon2 = s_coords
+
+                R = 6371.0  # Earth radius in km
+                dlat = radians(lat2 - lat1)
+                dlon = radians(lon2 - lon1)
+                a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+                c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                distance_km = R * c
+
+                # Preis: 0,1 € pro 5 km (wie in der Aufgabenstellung angegeben)
+                fee = 0.1 * (distance_km / 5.0)
+                # Auf Cent runden
+                return round(fee, 2)
+            except Exception:
+                return 0.0
+
+        # Basic fallback
+        return 2.0
     # *** PUBLIC GET methods ***
 
     def sold(self):
         """
 
-        :return: True, if auction is expired AND purchaser id is set or there is no purchaser,
-        then _purchaser_id == "Kein Bieter"
+        :return: True, falls die Auktion abgelaufen ist UND eine Käufer-ID gesetzt wurde
+             (bei keinem Käufer ist `_purchaser_id == "Kein Bieter"`).
         """
         return self._purchaser_id is not None
 
     def sold_success(self):
         """
 
-        :return: True, if auction is expired and purchaser id is set
+        :return: True, falls die Auktion abgelaufen ist und eine Käufer-ID gesetzt wurde
         """
         return self._purchaser_id is not None and self._purchaser_id != "Kein Bieter"
 
     def expired(self):
         """
 
-        :return: True, if auction has expired, else False
+        :return: True, falls die Auktion abgelaufen ist, sonst False
         """
         return datetime.now() >= self._auction_ends
 
@@ -183,16 +214,16 @@ class Auction:
     def get_highest_bid(self):
         """
 
-        :return: highest bid on this auction in €
+        :return: Höchstes Gebot in dieser Auktion in Euro
         """
         if not self._users_bidding:
             return 0.0
-        return -self._users_bidding[0][0]  # Negative because we use a min-heap
+        return -self._users_bidding[0][0]  # Negativ, weil wir einen min-Heap verwenden
 
     def get_highest_bidder(self) -> str:
         """
 
-        :return: user_id of highest bidder in this auction
+        :return: Nutzer-ID des höchsten Bieters dieser Auktion
         """
         if not self._users_bidding:
             return "Kein Bieter"
@@ -219,8 +250,8 @@ class Auction:
     def get_bid_of_user(self, user_id):
         """
 
-        :param user_id: user ID of some user
-        :return: value that given user has bid in this auction. if user_id has bid nothing, then None is returned
+        :param user_id: Nutzer-ID
+        :return: Gebotswert, den der angegebene Nutzer abgegeben hat; falls kein Gebot vorhanden ist, wird `None` zurückgegeben
         """
         # minuszeichen wegen min-heap
         return next((-value for value, id_bidder in self._users_bidding if id_bidder == user_id), None)

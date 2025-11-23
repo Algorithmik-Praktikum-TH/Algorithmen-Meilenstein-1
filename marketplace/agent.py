@@ -9,7 +9,7 @@ class Agent:
     def __init__(self, id):
         """
 
-        :param id: id of auction
+        :param id: ID des Agenten
         """
         self._id = id
 

@@ -1,16 +1,16 @@
-# Definiert die Klasse Trie. class is used to look for all words that start with a given prefix.
+# Definiert die Klasse Trie. Die Struktur wird verwendet, um alle Wörter zu finden, die mit einem gegebenen Präfix beginnen.
 
 class TrieNode:
-    """A node in the Trie structure.
+    """Ein Knoten der Trie-Struktur.
 
-   Attributes:
-       children: A dictionary mapping character to TrieNode.
-       _is_end_of_word: A boolean indicating if the node represents the end of a word.
+   Attribute:
+       children: Dictionary, die Zeichen auf `TrieNode`-Kinder abbildet.
+       _is_end_of_word: Boolescher Wert, der angibt, ob der Knoten das Ende eines Wortes darstellt.
    """
 
     # *** CONSTRUCTORS ***
     def __init__(self):
-        """Initializes a TrieNode with an empty children dictionary and end-of-word flag set to False."""
+        """Initialisiert einen `TrieNode` mit leerer Kinder-Dictionary und End-of-Word-Flag False."""
         self.children = {}
         self._is_end_of_word = False
 
@@ -18,7 +18,7 @@ class TrieNode:
 
     def set_is_end_of_word(self):
         """
-        Sets member variable _is_end_of_word to True
+        Setzt das Flag `_is_end_of_word` auf True.
         """
         self._is_end_of_word = True
 
@@ -29,26 +29,24 @@ class TrieNode:
 
 
 class Trie:
-    """A Trie data structure for storing strings.
+    """Trie-Datenstruktur zum Speichern von Zeichenketten.
 
-    Attributes:
-        _root (TrieNode): The root node of the Trie.
+    Attribute:
+        _root (TrieNode): Die Wurzel des Trie.
     """
 
     # *** CONSTRUCTORS ***
     def __init__(self):
-        """Initializes a Trie with a root TrieNode."""
+        """Initialisiert das `Trie` mit einer Wurzel-`TrieNode`."""
         self._root = TrieNode()
 
     # *** PUBLIC methods ***
 
     def insert(self, word):
-        """Inserts a word into the Trie. Goes through each character of the given word. if a character is not yet
-        a child node, then add a new TrieNode for this character and go to this child node. the node representing the
-        last character of the word is marked by setting _is_end_of_word to True.
+        """Fügt ein Wort in das Trie ein. Für jedes Zeichen wird ein Kindknoten erzeugt, falls noch nicht vorhanden.
+        Der Knoten des letzten Zeichens wird als Wortende markiert.
 
-        Args:
-            word (str): The word to be inserted into the Trie.
+        :param word: Das einzufügende Wort
         """
         word = word.lower()
         node = self._root
@@ -61,14 +59,10 @@ class Trie:
     # *** PUBLIC GET methods ***
 
     def search(self, prefix):
-        """Searches for all words in the Trie that start with the given prefix. Calls _ind_words with the node that is
-        the last node of the prefix
+        """Sucht alle Wörter, die mit dem gegebenen Präfix beginnen.
 
-        Args:
-            prefix (str): The prefix to search for in the Trie.
-
-        Returns:
-            list: A list of words that start with the given prefix.
+        :param prefix: Das Präfix, nach dem gesucht werden soll
+        :return: Liste mit allen passenden Wörtern
         """
         prefix = prefix.lower()
         node = self._root
@@ -82,14 +76,11 @@ class Trie:
 
     @staticmethod
     def _find_words(node, prefix):
-        """Recursively finds all words starting from the given node.
+        """Findet rekursiv alle Wörter, die von diesem Knoten aus gebildet werden können.
 
-        Args:
-            node (TrieNode): The node to start the search from.
-            prefix (str): The current prefix formed from the root to this node.
-
-        Returns:
-            list: A list of words found from this node.
+        :param node: Startknoten
+        :param prefix: Aktuelles Präfix von der Wurzel bis zu diesem Knoten
+        :return: Liste gefundener Wörter
         """
         words = []
         if node.is_end_of_word():

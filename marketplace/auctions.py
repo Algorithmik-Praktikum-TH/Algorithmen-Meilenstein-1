@@ -16,14 +16,14 @@ import csv
 # werden zu gui), nutzt man entweder AVL-Baum oder Hashtabelle.
 class Auctions(dict):
     """
-    Class representing a dictionary of auctions
+    Repräsentiert die Sammlung aller Auktionen (als Dictionary).
 
-    Attributes:
-        _id_next_auction (int):
-        _heap (marketplace.max_heap.MaxHeap):
-        _users (marketplace.users.Users): contains all users of the platform
-        _my_simulator (marketplace.simulator.Simulator): simulates other users selling and buying stuff
-        _stop_event (threading.Event): needed to stop simulator when user wants to close application
+    Attribute:
+        _id_next_auction (int): Zähler für die nächste Auktions-ID
+        _heap (marketplace.max_heap.MaxHeap): Heap zur schnellen Auswahl nach Anzahl Bieter
+        _users (marketplace.users.Users): enthält alle Nutzer der Plattform
+        _my_simulator (marketplace.simulator.Simulator): simuliert weitere Nutzeraktionen
+        _stop_event (threading.Event): Event, um die Simulation zu stoppen
     """
 
     # *** CONSTRUCTORS ***
@@ -80,7 +80,7 @@ class Auctions(dict):
 
     def bid_in_auction(self, auction_id, user, bid_amount):
         if auction_id in self:
-            success = self[auction_id].bid(user, bid_amount)
+            success = self[auction_id].bid(user, bid_amount, users_map=self._users)
             if success and self._heap is not None:
                 self._heap.update_bidders(auction_id, self[auction_id].bid_count())
             return success
@@ -126,7 +126,7 @@ class Auctions(dict):
         return self[auction_id].seller_id()
 
     def get_purchaser_id(self, auction_id):
-        return self[auction_id].purcahser_id()
+        return self[auction_id].purchaser_id()
 
     def get_item(self, auction_id):
         return self[auction_id].item()
@@ -236,32 +236,13 @@ class Auctions(dict):
     # TODO: in 3. Praktikum: nutze diese Methode und passe diese evtl. an
     def get_top_rated_user(self, with_num_stars=False):
         """
-        Returns user ID of user that got the highest rating of other users
-        :param with_num_stars: if True, then return stars together with user_id, else only return user_id
-        :return:
+        Gibt die Nutzer-ID des am besten bewerteten Nutzers zurück.
+
+        :param with_num_stars: Wenn True, gebe zusätzlich die durchschnittliche Sternezahl zurück
+        :return: Nutzer-ID oder bei `with_num_stars=True` das Tupel (mean_stars, user_id)
         """
-        # TODO: do not use this part
-        # stupid brute force implementation
-        max_user = None
-        max_stars = 0
-        for user_id, user in self._users.items():
-            stars_mean = user.get_rating_stars_mean()
-            if stars_mean > max_stars:
-                max_stars = stars_mean
-                max_user = user_id
-
-        if with_num_stars:
-            return [max_stars, max_user]
-        else:
-            return max_user
-
-        # TODO: instead use and probably change this
-        # if not self._heap_users_rated:
-        #     return None
-        # if with_num_stars:
-        #     return self._heap_users_rated.get_top_user()
-        # else:
-        #     return self._heap_users_rated.get_top_user()[1]
+        # Verwende die neue Users-API, die einen Bewertungs-Heap pflegt
+        return self._users.get_top_rated_user(with_num_stars=with_num_stars)
 
     def get_active_auctions(self):
         auctions_active = {}
@@ -299,7 +280,7 @@ class Auctions(dict):
 
         with open(csvfile, newline='', encoding='utf-8-sig') as csvfile:
             csvreader = csv.reader(csvfile)
-            # Skip header row
+            # Überspringe die Header-Zeile
             next(csvreader)
 
             for row in csvreader:
@@ -318,11 +299,12 @@ class Auctions(dict):
 
     def _place_random_bids(self, num_bids=10, user_ids=None, show_message=False, current_user_id=None):
         """
+        Platziert zufällige Gebote auf aktiven Auktionen (nur für Simulation/Tests).
 
-        :param num_bids:
-        :param user_ids:
-        :param show_message:
-        :param current_user_id:
+        :param num_bids: Anzahl der zufälligen Gebote
+        :param user_ids: Liste von Nutzer-IDs, die bieten können (falls None, alle Nutzer)
+        :param show_message: Wenn True, zeige Hinweise, wenn das aktuelle Gebot überboten wurde
+        :param current_user_id: Aktuelle Nutzer-ID (für die GUI/Simulation)
         """
         if user_ids is None:
             user_ids = list(self._users.keys())

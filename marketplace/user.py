@@ -19,30 +19,30 @@ import marketplace.praktikumsgruppen
 
 class User(marketplace.praktikumsgruppen.SetNode):
     """
-    Class representing a user
+    """Repräsentiert einen Nutzer.
 
-    Attributes:
-        _id (str): user id
-        _password (str): password of user
-        _name_first (str): latin name of user
-        _name_family (str): family name of user
-        _friends (): set with all friends of the user
-        _balance (float): budget of user in €
-        _gps_coords ():
-        _address (str): location, street where user lives according to gps coordinate
-        _rating_stars (list): list with stars the user got from other users
+    Attribute:
+        _id (str): Nutzer-ID
+        _password (str): Passwort des Nutzers
+        _name_first (str): Vorname
+        _name_family (str): Familienname
+        _friends (set): Menge der Freunde des Nutzers
+        _balance (float): Kontostand des Nutzers in Euro
+        _gps_coords (tuple): GPS-Koordinaten (Latitude, Longitude)
+        _address (str): Adresse zum Wohnort
+        _rating_stars (list): Liste der vergebenen Sternebewertungen
     """
 
     # *** CONSTRUCTORS ***
     def __init__(self, user_id: str, password: str, name_family: str, name_first: str, gps_coord, address):
         """
 
-        :param user_id: GM-ID of student
-        :param password: Passwort (Defaultmäßig "abcde")
+        :param user_id: GM‑ID des Studierenden / Nutzerkennung
+        :param password: Passwort (Standardmäßig "abcde")
         :param name_family: Familienname
         :param name_first: Vorname
-        :param gps_coord: Tupel mit Längen- und Breitengrad des erfundenen Wohnorts des Nutzers
-        :param address: String mit Adresse die zu GPS Koordinaten gehört
+        :param gps_coord: Tupel mit (Latitude, Longitude) des Wohnorts
+        :param address: Adresse (String) zum Wohnort
         """
         super().__init__()
 
@@ -52,9 +52,9 @@ class User(marketplace.praktikumsgruppen.SetNode):
         self._name_first = name_first
         self._name_family = name_family
 
-        self._friends = set()              # friends of user
+        self._friends = set()              # Freunde des Nutzers
 
-        self._balance = 500.0           # amount of money user has in Euros
+        self._balance = 500.0           # Kontostand des Nutzers in Euro
 
         # Tupel mit Längen- und Breitengrad des erfundenen Wohnorts des Users.
         self._gps_coords = gps_coord

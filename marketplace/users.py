@@ -9,6 +9,7 @@
 import csv
 import marketplace.user
 import marketplace.praktikumsgruppen
+from marketplace.rating_heap import RatingHeap
 
 
 class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
@@ -23,32 +24,37 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
         # erstelle Praktikumsgruppen als Menge disjunkter Mengen bzw. als dictionary (1. und 2. Praktikum)
         super().create_groups(list(self.keys()), self._groupnumbers)
 
+        # Erstelle und fülle die Bewertungs-Heap-Struktur zur schnellen Abfrage des Top-bewerteten Users
+        self._rating_heap = RatingHeap()
+        for uid in list(self.keys()):
+            mean = self[uid].get_rating_stars_mean()
+            self._rating_heap.add_user(uid, mean)
+
     # *** PUBLIC SET methods ***
 
     # *** PUBLIC methods ***
 
     def add(self, user_id, password, name_family="", name_first="", gps_coord=(None, None), address=""):
         """
-        Adds the given user with the user_id to the dictionary that the Users parent class Praktikumsgruppen is
-        inheriting from
-        :param user_id: user id of user
-        :param password: password of user
-        :param name_family: family name of user
-        :param name_first: first name of user
-        :param gps_coord: Tuple with Längen- und Breitengrad des erfundenen Wohnorts des Nutzers
-        :param address: String mit Adresse die zu GPS Koordinaten gehört
+        Fügt einen Benutzer mit `user_id` in die von `Praktikumsgruppen` geerbte Struktur ein.
+        :param user_id: GM-ID des Benutzers
+        :param password: Passwort des Benutzers
+        :param name_family: Familienname
+        :param name_first: Vorname
+        :param gps_coord: Tupel mit Längen- und Breitengrad des erfundenen Wohnorts
+        :param address: Adresse, die zur GPS-Koordinate gehört
         """
         self[user_id] = marketplace.user.User(user_id, password, name_family, name_first, gps_coord, address)
 
     def calc_distance_between_users(self, user_id1, user_id2):
-        # TODO for students: calculate distance between gps coordinates of user1 and user2 using a map and an
-        #  algorithm that calculates the shortest distance on the map
+        # TODO für Studierende: Berechne die Distanz zwischen den GPS-Koordinaten von user1 und user2
+        #  anhand eines Karten-/Graphen-Algorithmus (kürzeste Fahrstrecke im Straßennetz).
 
         user1 = self[user_id1]
         user2 = self[user_id2]
 
-        # TODO for students: replace this naive implementation of distance manhattan with distance gotten
-        #  from graph algorithm
+        # TODO für Studierende: Ersetze diese naive Manhattan-Näherung durch eine Distanz aus einem Graph-Algorithmus
+        #  (z. B. Road-Distance / Routing).
         distance = sum(abs(a - b) for a, b in zip(user1.gps_coords(), user2.gps_coords()))
 
         return distance
@@ -71,10 +77,11 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
 
     def get_friends_andgroupmembers_pretty_print(self, user_id):
         """
-        Returns list of friends and group members for the given user_id that is shown on GUI.
+        Liefert die Anzeige-Strings (pretty_print) für Freunde und Gruppenmitglieder des gegebenen `user_id`,
+        wie sie in der GUI dargestellt werden sollen.
 
-        :param user_id: usually the current user id
-        :return:
+        :param user_id: normalerweise die aktuelle Nutzer-ID
+        :return: Liste von Anzeige-Strings
         """
         friends = self[user_id].friends()
 
@@ -94,10 +101,11 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
 
     def get_mutual_friends(self, user_id):
         """
+        Ermittelt Freunde-von-Freunden (Zweiten-Grades) für `user_id` und zählt, wie oft jeder Kandidat
+        mit Freunden von `user_id` verknüpft ist.
 
-        :param user_id: usually the current user id
-        :return: dictionary with friends of the friends of given user_id together with the information with how
-        many friends of user_id these friends are friends with
+        :param user_id: in der Regel die aktuelle Nutzer-ID
+        :return: Dictionary {user_id: anzahl_gemeinsamer_freunde}
         """
         friends = self[user_id].friends()
         mutual_friends_count = {}
@@ -114,42 +122,106 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
         return mutual_friends_count
 
     def suggest_friends(self, user_id, num_common_friends=2, distance_threshold=0.1, pretty_print=True):
-        """
-        Suggests users to the given user_id that
-        (1) are friends with at least num_common_friends friends of user_id or
-        (2) that live nearby the given user_id (closer as distance_threshold) and are friends of friends of friends...
-        (see are_users_connected())
+        """Schlägt für `user_id` andere Nutzer als Freunde vor.
 
-        :param user_id: usually the current user id
-        :param num_common_friends: only suggest users that are at least friends with two of the user_ids friends
-        :param distance_threshold: only suggest users that live closer to the given user_id as this threshold value
-        :param pretty_print: if True, then call pretty_print() on all suggested friends before returning them
-        :return: list of suggested friends. the first part of the list should contain common friends, ordered
-        so that users with maximum number of common friends appear first. the second part of the list should
-        contain all users that live close by, again sorted, so that the direct neighbour comes first.
+        Zwei Kriterien werden kombiniert:
+        1. Nutzer, die mindestens `num_common_friends` gemeinsame Freunde mit `user_id` haben.
+        2. Nutzer, die über das Freundesnetzwerk in bis zu 3 Graden verbunden sind und die
+           räumlich näher als `distance_threshold` liegen (Distanz-Metrik: derzeit Manhattan/vereinfachte).
+
+        Rückgabe:
+            Liste von Nutzer-IDs (oder deren `pretty_print()`-Darstellung, falls `pretty_print=True`).
+            Zuerst erscheinen Kandidaten mit vielen gemeinsamen Freunden, danach nahe Kandidaten.
         """
         mutual_friends_count = self.get_mutual_friends(user_id)
-        # TODO for students: Implement this method by filling the list suggested_friends
 
         suggested_friends = []
 
-        if pretty_print:
-            suggested_friends = [self[friend].pretty_print() for friend in suggested_friends]
+        # Teil 1: Kandidaten mit mindestens num_common_friends gemeinsamen Freunden, absteigend sortiert
+        common_candidates = [uid for uid, cnt in mutual_friends_count.items() if cnt >= num_common_friends]
+        common_candidates.sort(key=lambda uid: mutual_friends_count[uid], reverse=True)
 
-        return suggested_friends
+        # Teil 2: Nutzer, die innerhalb des Freundesgraphen (bis Grad 3) verbunden sind und nahe wohnen
+        nearby_candidates = []
+        for other_id in self.keys():
+            if other_id == user_id:
+                continue
+            if other_id in self[user_id].friends():
+                continue
+            # consider only users connected within 3 degrees
+            if self.are_users_connected(user_id, other_id, degree=3):
+                dist = self.calc_distance_between_users(user_id, other_id)
+                if dist <= distance_threshold:
+                    nearby_candidates.append((other_id, dist))
+
+        nearby_candidates.sort(key=lambda x: x[1])
+        nearby_ids = [uid for uid, _ in nearby_candidates]
+
+        # Kombiniere die Ergebnisse: zuerst gemeinsame Freunde, danach nahe Kandidaten ohne Duplikate
+        combined = common_candidates + [uid for uid in nearby_ids if uid not in common_candidates]
+
+        if pretty_print:
+            return [self[uid].pretty_print() for uid in combined]
+
+        return combined
+
+    def rate_user(self, user_id: str, stars: int):
+        """Bewerte `user_id` mit `stars` und aktualisiere die Top-Rated-DS.
+
+        Diese Methode sollte anstelle von direktem Aufruf von `users[user_id].rate_user()`
+        verwendet werden, damit die interne Bewertungs-Heap-Struktur aktuell bleibt.
+        """
+        if user_id not in self:
+            raise KeyError("User not found")
+        # delegiere an das User-Objekt
+        self[user_id].rate_user(stars)
+        # aktualisiere Heap mit neuer Mittelbewertung
+        new_mean = self[user_id].get_rating_stars_mean()
+        self._rating_heap.update_user(user_id, new_mean)
+
+    def get_top_rated_user(self, with_num_stars=False):
+        """Gibt den Top-bewerteten Nutzer zurück (unter Verwendung der Heap-Struktur).
+
+        Falls mit `with_num_stars=True`, wird ein Tupel (mean_stars, user_id) zurückgegeben.
+        """
+        top = self._rating_heap.get_top_user()
+        if not top:
+            return None
+        mean, uid = top
+        if with_num_stars:
+            return [mean, uid]
+        return uid
 
     def are_users_connected(self, user_id1, user_id2, degree=3):
-        """
-        :param user_id1: a user that we are searching a friend for
-        :param user_id2: another user, where we want to check whether it is somehow friends with user_id1 over some
-        other shared friends
-        :param degree: only look for possible friend connections up to this degree of friendship
-        :return: True, if user_id1 and user_id2 are friends over some edges up to the given degree, else False
+        """Überprüft, ob zwei Nutzer über das Freundesnetzwerk innerhalb einer
+        maximalen Verbindungsdistanz `degree` verbunden sind.
+
+        Implementierung: Breitensuche (BFS) im Freundesgraphen bis zur Tiefe `degree`.
+        Rückgabe: `True`, falls `user_id2` innerhalb von `degree`-Kanten von `user_id1` erreichbar ist.
         """
         if user_id1 not in self or user_id2 not in self:
             return False
 
-        # TODO for students: Implement this method
+        if user_id1 == user_id2:
+            return True
+
+        # BFS bis zur vorgegebenen Tiefe (degree)
+        from collections import deque
+
+        visited = set([user_id1])
+        queue = deque()
+        queue.append((user_id1, 0))
+
+        while queue:
+            current, dist = queue.popleft()
+            if dist >= degree:
+                continue
+            for friend in self[current].friends():
+                if friend == user_id2:
+                    return True
+                if friend not in visited:
+                    visited.add(friend)
+                    queue.append((friend, dist + 1))
 
         return False
 
@@ -159,19 +231,18 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
 
     def _read_users_from_csvfile(self, csvfile):
         """
-        Read the given csvfile that contains all students that want to do the Praktikum in this semester
-        including their GM-ID, Names and number of their Praktikumsgruppe
+        Liest die angegebene CSV-Datei ein, die alle Studierenden dieses Semesters enthält
+        (GM-ID, Namen, Praktikumsgruppennummer, GPS-Koordinaten, Adresse).
 
-        :param csvfile: csv file that has to be created at the beginning of the semester containing all students
-        in this semester
+        :param csvfile: Pfad zur CSV-Datei mit den Studierendendaten
         """
         with open(csvfile, newline='', encoding='utf-8-sig') as csvfile:
             csvreader = csv.reader(csvfile)
-            # Skip header row
+            # Überspringe die Header-Zeile
             next(csvreader)
 
-            # private member variable containing the Praktikumsgruppe number of the students in the order that the
-            # students are read from the csv file
+            # private member variable mit den Praktikumsgruppennummern der Studierenden
+            # in der Reihenfolge, in der die Datensätze aus der CSV-Datei gelesen werden
             self._groupnumbers = []
 
             for row in csvreader:
@@ -183,8 +254,9 @@ class Users(marketplace.praktikumsgruppen.Praktikumsgruppen):
 
     def _read_friends_csv(self, file_path):
         """
-        Funktion, um die friends.csv-Datei einzulesen und ein Dictionary zu erstellen
-        :param file_path: path to friends.csv file
+        Liest die `friends.csv` ein und fügt Freundschaftsbeziehungen zu den User-Objekten hinzu.
+
+        :param file_path: Pfad zur `friends.csv`-Datei
         """
         with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
             csvreader = csv.reader(csvfile)

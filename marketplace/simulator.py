@@ -40,7 +40,12 @@ class Simulator:
         for _ in range(35):
             random_user = random.choice(user_ids)
             stars = random.randint(1,5)
-            users[random_user].rate_user(stars)
+            # Verwende die Users.rate_user-Methode, damit intern die Heap-Struktur aktualisiert wird
+            try:
+                users.rate_user(random_user, stars)
+            except Exception:
+                # defensive: falls etwas schief geht, fange das ab und setze fort
+                pass
 
     def stop(self):
         self.stop_simulation = True

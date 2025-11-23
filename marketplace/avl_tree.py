@@ -56,12 +56,13 @@ class AVLTree:
 
     def insert(self, key, value):
         """
-            Insert a new Node into the Tree. If the key already exists the associated Node will be updated.
+            Fügt einen neuen Knoten in den Baum ein. Falls der Schlüssel bereits existiert,
+            wird der zugehörige Knoten aktualisiert.
 
-            Return:
+            Rückgabe:
             -------
-            If the Key does not exist return new Node.
-            If the Key does exist return the Node that has been updated.
+            Falls der Schlüssel nicht existiert, wird der neue Knoten zurückgegeben.
+            Falls der Schlüssel existiert, wird der aktualisierte Knoten zurückgegeben.
         """
 
         if self.root is None:
@@ -171,23 +172,23 @@ class AVLTree:
     def delete_node(self, node):
 
         # -----
-        # Improvements since prior lesson
+        # Verbesserungen gegenüber der vorherigen Lektion
 
         # Protect against deleting a Node not found in the tree
         if node is None or self.find(node.key) is None:
-            print("Node to be deleted not found in the tree!")
+            print("Knoten zum Löschen wurde im Baum nicht gefunden!")
             return None
 
         # -----
 
-        # returns the Node with min key in tree rooted at input Node
+        # Gibt den Knoten mit dem kleinsten Schlüssel im Teilbaum zurück
         def min_key_node(n):
             current = n
             while current.left_child is not None:
                 current = current.left_child
             return current
 
-        # returns the number of children for the specified Node
+        # Gibt die Anzahl der Kinder des angegebenen Knotens zurück
         def num_children(n):
             num_child = 0
             if n.left_child is not None:
@@ -196,7 +197,7 @@ class AVLTree:
                 num_child += 1
             return num_child
 
-        # get the parent of the Node to be deleted
+        # Bestimme den Elternknoten des zu löschenden Knotens
         node_parent = node.parent
 
         # get the number of children of the Node to be deleted

@@ -5,23 +5,22 @@
 # Produkts erfolgt über die id der zugehörigen Auktion, deshalb hat diese Klasse keine id.
 
 class Item:
-    """
-    Class representing an item
+    """Repräsentiert einen Artikel.
 
-    Attributes:
-        _name (str): name of item
-        _description (str): description of the item as one sentence
-        _value_min (float): minimum value in € for which the item may be sold (Mindestgebot)
+    Attribute:
+        _name (str): Name des Artikels
+        _description (str): Beschreibung als ein Satz
+        _value_min (float): Mindestpreis in Euro (Mindestgebot)
     """
 
     # *** CONSTRUCTORS ***
     def __init__(self, name: str, description: str, value_min: float) -> None:
         """
-        Standard constructor
+        Standardkonstruktor
 
-        :param name: name of item
-        :param description: sentence describing the item
-        :param value_min: minimum value in € for which the item may be sold (Mindestgebot)
+        :param name: Name des Artikels
+        :param description: Beschreibung des Artikels
+        :param value_min: Mindestpreis in Euro (Mindestgebot)
         """
         self._name = name
         self._description = description

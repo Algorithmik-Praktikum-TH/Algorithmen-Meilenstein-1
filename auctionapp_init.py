@@ -46,7 +46,7 @@ class AuctionAppInit:
         self.tooltip = None
         self.initialize_trie()
 
-        self.enable_widgets(False)  # Initially disable all widgets
+        self.enable_widgets(False)  # Anfangs alle Widgets deaktivieren
 
     def create_frame_useraccount(self):
         self.frame_useraccount = ttk.Frame(self.root)
@@ -171,7 +171,7 @@ class AuctionAppInit:
         self.mutual_friends_listbox.grid(row=1, column=1, rowspan=7, padx=5, pady=5, sticky="nsew")
 
     def create_frame_search_bid(self):
-        # Frame to contain search and bid btn.
+        # Frame, das Suche und Bieten-Buttons enthält.
         self.frame_search_bid = ttk.Frame(self.root)
         self.frame_search_bid.grid(row=5, column=6, padx=5, pady=5, sticky="nsew")
 
@@ -187,10 +187,10 @@ class AuctionAppInit:
         self.search_btn = tk.Button(self.frame_search_bid, text="Suchen", command=self.search_items)
         self.search_btn.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
-        # Frame to contain the listbox and scrollbar.
+        # Frame, das die Listbox und die Scrollbar enthält.
         self.frame = ttk.Frame(self.frame_search_bid)
         self.frame.grid(row=2, column=0, rowspan=12, columnspan=12, padx=5, pady=5, sticky="nsew")
-        # Create a scrollbar with vertical orientation.
+        # Erzeuge eine vertikale Scrollbar.
         self.scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL)
 
         tk.Label(self.frame_search_bid, text="Alle Auktionen", justify='left').grid(row=0, column=0, columnspan=12,
@@ -198,9 +198,9 @@ class AuctionAppInit:
         self.all_items_listbox = tk.Listbox(self.frame, width=140, height=30,
                                             yscrollcommand=self.scrollbar.set)
         # self.all_items_listbox.grid(row=6, column=6, rowspan=13, columnspan=6, padx=5, pady=5)
-        # Bind the <<ListboxSelect>> event to the on_listbox_select function
+        # Binde das Ereignis <<ListboxSelect>> an die Funktion `on_listbox_select`
         self.all_items_listbox.bind('<<ListboxSelect>>', self.on_listbox_select)
-        # Link it to the listbox.
+        # Verknüpfe die Scrollbar mit der Listbox.
         self.scrollbar.config(command=self.all_items_listbox.yview)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.all_items_listbox.pack()
@@ -657,6 +657,13 @@ class AuctionAppInit:
         for product_name, count in tuple_list:
             self.trie.insert(product_name)
             self.avl_tree.insert(product_name, count)
+        # Trie auch mit User-IDs befüllen, damit die Autovervollständigung auch Nutzer-IDs
+        # vorschlagen kann (Aufgabe Teilprojekt 1)
+        for user_id in self._users.keys():
+            try:
+                self.trie.insert(user_id)
+            except Exception:
+                pass
 
     def show_tooltip(self, suggestions):
         if self.tooltip:

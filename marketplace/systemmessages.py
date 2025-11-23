@@ -40,11 +40,11 @@ class SystemMessages:
         self._lbl_sysmessage.config(text=message, bg='yellow')
 
         if len(self._queue) == 0:
-            display_time = 15  # 15 seconds for the last message
+            display_time = 15  # 15 Sekunden für die letzte Nachricht
         else:
-            display_time = 3  # 3 seconds for other messages
+            display_time = 3  # 3 Sekunden für andere Nachrichten
 
-        # Schedule the next message display
+        # Plane die Anzeige der nächsten Nachricht
         self._lbl_sysmessage.after(display_time * 1000, self._display_next_message)
 
     # *** PUBLIC methods to return class properties ***
