@@ -657,6 +657,10 @@ class AuctionAppInit:
         for product_name, count in tuple_list:
             self.trie.insert(product_name)
             self.avl_tree.insert(product_name, count)
+    # --- Nutzer-IDs ebenfalls in den Trie einfügen ---
+        user_ids = self._users.get_all_user_ids()
+        for user_id in user_ids:
+        self.trie.insert(user_id)    
 
     def show_tooltip(self, suggestions):
         if self.tooltip:
